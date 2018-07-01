@@ -1,0 +1,7 @@
+<nav>
+	<ul>
+		{% for item in items %}
+			<li><a href="{{ url('page_show', {name: item.page.name}) }}">{{ item.label }}</a></li>
+		{% endfor %}
+	</ul>
+</nav>
