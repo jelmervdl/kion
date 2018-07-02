@@ -4,14 +4,31 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <title>{% block title %}Welcome!{% endblock %}</title>
+        <link rel="stylesheet" href="{{ asset('css/kion.css') }}">
         {% block stylesheets %}{% endblock %}
     </head>
     <body>
     	<header>
-    		<h1>KION</h1>
-    		{{ render(controller('App\\Controller\\DefaultController::menu')) }}
+            <div class="container">
+        		<h1>KION</h1>
+        		{{ render(controller('App\\Controller\\DefaultController::menu')) }}
+            </div>
     	</header>
-        {% block body %}{% endblock %}
+
+        <section class="container">
+            <span class="logo">
+                <span>Kunstmatige</span>
+                <span>Intelligentie</span>
+                <span>Opleidingen</span>
+                <span>Nederland</span>
+            </span>
+        </section>
+
+        <main>
+            <div class="container">
+                {% block body %}{% endblock %}
+            </div>
+        </main>
         {% block javascripts %}{% endblock %}
     </body>
 </html>

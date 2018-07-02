@@ -56,6 +56,9 @@
     "doctrine/orm": {
         "version": "v2.6.1"
     },
+    "erusev/parsedown": {
+        "version": "1.7.1"
+    },
     "jdorn/sql-formatter": {
         "version": "v1.2.17"
     },

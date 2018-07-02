@@ -1,0 +1,55 @@
+html, body {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	font: 16px/1.5 sans-serif;
+}
+
+body > header {
+	background: white;
+	border-bottom: 1px solid #ccc;
+	height: 3em;
+}
+
+body > header nav {
+	text-align: right;
+}
+
+body > header > .container {
+	display: flex;
+}
+
+body > header h1 {
+	flex: 0 0 auto;
+	margin: 0;
+}
+
+body > header nav {
+	flex: 1 1 auto;
+}
+
+body header nav ul {
+	list-style: none;
+	margin: 0;
+	line-height: 3em;
+}
+
+body header nav ul li {
+	display: inline;
+}
+
+.container {
+	max-width: 800px;
+	margin: 0 auto;
+}
+
+.logo > span {
+	display: block;
+	text-transform: uppercase;
+}
+
+.logo > span::first-letter {
+	font-weight: bold;
+	display: inline-block;
+	width: 10px;
+}
