@@ -16,6 +16,8 @@ class AdminController extends Controller
 	 */
 	public function index()
 	{
+		$this->denyAccessUnlessGranted('ROLE_ADMIN', null, 'Unable to access this page');
+		
 		$recent_changes = $this->getDoctrine()->getRepository(LogEntry::class)->findBy([], ['loggedAt' => 'desc'], 10);
 
 		return $this->render('admin/index.html.twig', ['recent_changes' => $recent_changes]);

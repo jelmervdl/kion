@@ -64,3 +64,14 @@ services:
             - { name: doctrine.event_subscriber, connection: default }
         calls:
             - [ setAnnotationReader, [ "@annotation_reader" ] ]
+
+    gedmo.listener.uploadable:
+        public: true
+        class: Gedmo\Uploadable\UploadableListener
+        tags:
+            - { name: doctrine.event_subscriber, connection: default }
+        calls:
+            - [ setAnnotationReader, [ "@annotation_reader" ] ]
+            - [ setDefaultPath, [ "%kernel.project_dir%/var/files" ] ]
+
+    Gedmo\Uploadable\UploadableListener: '@gedmo.listener.uploadable'
