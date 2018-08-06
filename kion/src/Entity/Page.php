@@ -3,9 +3,11 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Mapping\Annotation as Gedmo;
 
 /**
  * @ORM\Entity(repositoryClass="App\Repository\PageRepository")
+ * @Gedmo\Loggable
  */
 class Page
 {
@@ -17,11 +19,13 @@ class Page
     private $id;
 
     /**
+     * @Gedmo\Versioned
      * @ORM\Column(type="string", length=255)
      */
     private $name;
 
     /**
+     * @Gedmo\Versioned
      * @ORM\Column(type="text")
      */
     private $content;
@@ -30,6 +34,12 @@ class Page
      * @ORM\Column(type="boolean")
      */
     private $public;
+
+    /**
+     * @Gedmo\Slug(fields={"name"})
+     * @ORM\Column(type="string", length=255, unique=true)
+     */
+    private $slug;
 
     public function getId()
     {
@@ -70,5 +80,10 @@ class Page
         $this->public = $public;
 
         return $this;
+    }
+
+    public function getSlug()
+    {
+        return $this->slug;
     }
 }

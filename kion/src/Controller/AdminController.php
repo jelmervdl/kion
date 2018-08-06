@@ -7,28 +7,17 @@ use App\Entity\Menu;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Gedmo\Loggable\Entity\LogEntry;
 
 class AdminController extends Controller
 {
 	/**
-	 * @Route("/admin/pages/", name="admin_page_list")
+	 * @Route("/admin/", name="admin_index")
 	 */
-	public function list_pages()
+	public function index()
 	{
-		$pages = $this->getDoctrine()->getRepository(Page::class)->findAll();
-		return $this->render('admin/pages/list.html.twig', ['pages' => $pages]);
-	}
-	 
-	/**
-	 * @Route("/admin/pages/{id}", name="admin_page_show")
-	 */
-	public function edit_page($id)
-	{
-		$page = $this->getDoctrine()->getRepository(Page::class)->find($id);
+		$recent_changes = $this->getDoctrine()->getRepository(LogEntry::class)->findBy([], ['loggedAt' => 'desc'], 10);
 
-		if (!$page)
-			throw $this->createNotFoundException('Page not found');
-
-		return $this->render('admin/pages/edit.html.twig', ['page' => $page]);
+		return $this->render('admin/index.html.twig', ['recent_changes' => $recent_changes]);
 	}
 }

@@ -1,0 +1,21 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block body %}
+<section>
+	<h2>Recent pages</h2>
+	<p>Here should be a list of recently changed pages</p>
+</section>
+
+<section>
+	<h2>Recent files</h2>
+	<p>Same here, but for files</p>
+</section>
+
+<section>
+	<h2>Recent changes</h2>
+	<ol>
+	{% for entry in recent_changes %}
+		<li>{{ entry.username }} {{ entry.action }}d {{entry.objectClass}} {{ entry.objectId }}</li>
+	{% endfor %}
+</section>
+{% endblock %}
