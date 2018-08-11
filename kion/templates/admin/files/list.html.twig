@@ -21,7 +21,7 @@
 			{% for file in files %}
 				<tr>
 					<td><input type="checkbox" name="file_id[]" value="{{ file.id }}"></td>
-					<td>{{ file.name }}</td>
+					<td><a href="{{ path('file_show', {slug: file.slug}) }}">{{ file.name }}</a></td>
 					<td>{% if file.public %}Public{% else %}Private{% endif %}</td>
 				</tr>
 			{% endfor %}

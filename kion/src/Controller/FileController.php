@@ -91,11 +91,27 @@ class FileController extends Controller
 	public function list(Request $request)
 	{
 		$this->denyAccessUnlessGranted('ROLE_ADMIN', null, 'Unable to access this page');
-		
+
 		$repo = $this->getDoctrine()->getRepository(File::class);
 
 		$files = $repo->findAll();
 
 		return $this->render('admin/files/list.html.twig', ['files' => $files]);
+	}
+
+	/**
+	 * @Route("files/{slug}", name="file_show")
+	 */
+	public function show($slug)
+	{
+		$file = $this->getDoctrine()->getRepository(File::class)->findOneBy(['slug' => $slug]);
+
+		if (!$file)
+			throw $this->createNotFoundException('File not found');
+
+		if (!$file->getPublic())
+			$this->denyAccessUnlessGranted('ROLE_ADMIN', null, 'Unable to access this file');
+
+		return $this->file($file->getPath(), $file->getName());
 	}
 }

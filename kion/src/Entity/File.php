@@ -25,6 +25,12 @@ class File
     private $name;
 
     /**
+     * @Gedmo\Slug(fields={"name"})
+     * @ORM\Column(type="string", length=255, unique=true)
+     */
+    private $slug;
+
+    /**
      * @ORM\Column(type="string")
      * @Gedmo\UploadableFilePath
      */
@@ -62,6 +68,11 @@ class File
         $this->name = $name;
 
         return $this;
+    }
+
+    public function getSlug(): ?string
+    {
+        return $this->slug;
     }
 
     public function getPath(): ?string
