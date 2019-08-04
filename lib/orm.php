@@ -72,16 +72,19 @@ class ORM
 			throw new InvalidArgumentException("Can only insert instances of {$this->model}");
 
 		$sql_columns = [];
-		$bindings = [];
+		$bindings = [':id' => $object->id];
 
 		foreach ($this->schema->columns() as $property => $column)
 		{
+			if ($property == 'id')
+				continue;
+			
 			$placeholder = ":{$column->name}";
 			$sql_columns[] = sprintf('"%s" = %s', $column->name, $placeholder);
 			$bindings[$placeholder] = $object->$property;
 		}
 
-		$sql = sprintf('UPDATE "%s" SET %s',
+		$sql = sprintf('UPDATE "%s" SET %s WHERE id = :id',
 			$this->schema->tableName(),
 			implode(', ', $sql_columns));
 
