@@ -1,0 +1,48 @@
+body {
+	font: 1.4rem/2.0rem sans-serif;
+	background: #fff;
+	color: #333;
+	margin: 0;
+}
+
+.navbar {
+	background: #555;
+	color: #fff;
+}
+
+.navbar nav {
+	max-width: 40em;
+	margin: 0 auto;
+
+	display: flex;
+	justify-content: space-between;
+}
+
+.navbar .logo {
+	flex: 0 0;
+	padding: 0;
+}
+
+.navbar .logo img {
+	height: 3em;
+	margin: 0.2em;
+}
+
+.navbar a {
+	color: inherit;
+	text-decoration: none;
+
+	flex: 1 1;
+	text-align: center;
+	padding: 1em 0;
+}
+
+.navbar a:hover {
+	background: rgba(0, 0, 0, 0.4);
+}
+
+.content {
+	max-width: 40em;
+	padding: 1em 1em;
+	margin: 0 auto;
+}

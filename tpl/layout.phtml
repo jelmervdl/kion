@@ -1,0 +1,20 @@
+<DOCTYPE html>
+<html>
+	<head>
+		<title><?= static::html(trim($title)) ?> &mdash; KION</title>
+		<link rel="stylesheet" href="/static/kion.css">
+	</head>
+	<body>
+		<header class="navbar">
+			<nav>
+				<a href="/" class="logo"><img src="/static/kion-logo-white.svg" alt="KION" title="KION Logo"></a>
+				<a href="/about-us">About us</a>
+				<a href="/Partners">Partners</a>
+				<a href="/admin/">Log-in</a>
+			</nav>
+		</header>
+		<main class="content">
+			<?= $default ?>
+		</main>
+	</body>
+</html>
