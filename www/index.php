@@ -1,42 +1,110 @@
 <?php
 
-namespace kion;
+define('NONCE_SALT', 'G@\rE9\CE3c]-Gh{Evsem3z.N-CZZkn-');
 
 chdir('..');
 
+require_once 'lib/util.php';
 require_once 'lib/router.php';
 require_once 'lib/auth.php';
 require_once 'lib/orm.php';
 require_once 'lib/tpl.php';
+require_once 'lib/form.php';
 require_once 'kion/models/page.php';
+require_once 'kion/models/user.php';
 
 use orm\dsl as q;
+use orm\schema\LoadException;
+use kion\models\{Page, User, Role};
 use function tpl\render_template;
 
-$app = new \Router();
+function assert_admin($current_user)
+{
+	// if ($current_user->role !== kion\models\Role::ADMINISTRATOR)
+	// 	throw new \auth\UnauthorizedException();
+}
+
+function redirect($destination)
+{
+	return [
+		sprintf('Redirecting you to <a href="%s">%1$s</a>...', htmlspecialchars($destination, ENT_QUOTES, 'utf-8')),
+		['Location' => $destination],
+		302
+	];
+}
+
+$app = new Router();
+
+/* Website services */
 
 $app->container->register('router', function() use ($app) {
 	return $app;
 });
 
 $app->container->register('db', function() {
-	$db = new \PDO('sqlite:var/kion.sqlite');
-	$db->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+	$db = new PDO('sqlite:var/kion.sqlite');
+	$db->setAttribute(PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 	return $db;
 });
 
 $app->container->register('pages', function($db) {
-	return new \orm\ORM($db, models\Page::class);
+	return new orm\ORM($db, Page::class);
 });
 
-$app->exceptionHandler(\orm\NotFoundException::class, function($exception) {
-	return [render_template('tpl/not-found.phtml', ['exception' => $exception]), 404];
+$app->container->register('current_user', function() {
+	return new User(['role' => Role::GUEST]);
 });
 
-$app->route('/admin/pages/', function($current_user, $pages) {
-	assert_admin($current_user);
+/* Exception handlers */
+
+$app->exceptionHandler(auth\UnauthorizedException::class, function($exception) {
+	return redirect(edit_url('/admin/login', ['next' => $_SERVER['REQUEST_URI'], 'message' => $exception->getMessage()]));
+});
+
+$app->exceptionHandler(orm\NotFoundException::class, function($exception) {
+	return [render_template('tpl/404-not-found.phtml', ['exception' => $exception]), 404];
+});
+
+$app->exceptionHandler(NoRouteException::class, function($exception) {
+	return [render_template('tpl/404-not-found.phtml', ['exception' => $exception]), 404];
+});
+
+$app->exceptionHandler(Exception::class, function($exception) {
+	return [render_template('tpl/500-error.phtml', ['exception' => $exception]), 500];
+});
+
+/* Routes */
+
+$app->route('/admin/', ['assert_admin'], function() {
+	return render_template('tpl/admin/index.phtml');
+});
+
+$app->route('/admin/pages/', ['assert_admin'], function($pages) {
 	return render_template('tpl/admin/pages.phtml', ['pages' => $pages->query()->all()]);
 });
+
+$app->route('/admin/pages/<int:page_id>/', ['assert_admin'], 
+$app->route('/admin/pages/new', ['assert_admin'], function($pages, $page_id = null) {
+	$page = $page_id === null
+		? new Page()
+		: $pages->query()->filter(q\eq('id', $page_id))->one();
+
+	$errors = [];
+
+	try {
+		if (form\is_submitted('page')) {
+			$page->load($_POST);
+			$pages->save($page);
+			return redirect('/admin/pages/');
+		}
+	} catch (PDOException $e) {
+		$errors = ['uri' => $e->getMessage()];
+	} catch (LoadException $e) {
+		$errors = $e->errors;
+	}
+
+	return render_template('tpl/admin/page-form.phtml', compact('page', 'errors'));
+}));
 
 $app->route('/<path:page_uri>', function($page_uri, $pages) {
 	$page = $pages->query()->filter(q\eq('uri', $page_uri))->one();
@@ -46,5 +114,7 @@ $app->route('/<path:page_uri>', function($page_uri, $pages) {
 $app->route('/', function($router) {
 	return $router->dispatch('/index');
 });
+
+/* Go! */
 
 $app->execute();

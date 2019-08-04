@@ -42,15 +42,29 @@ class Router
 		$this->container = new Container();
 	}
 
-	public function route($path, $callback)
+	public function route($path, $conditions, $callback = null)
 	{
+		if ($callback === null) {
+			$callback = $conditions;
+			$conditions = [];
+		}
+
+		if (!is_array($conditions))
+			throw new \InvalidArgumentException('Route conditions must be an array');
+
+		if (!is_callable($callback))
+			throw new \InvalidArgumentException('Route callback must be callable');
+
 		[$pattern, $slots] = $this->compilePath($path);
 
 		$this->routes[] = [
 			'pattern' => $pattern,
 			'slots' => $slots,
+			'conditions' => $conditions,
 			'callback' => $callback
 		];
+
+		return $callback;
 	}
 
 	public function execute()
@@ -80,6 +94,9 @@ class Router
 
 					foreach ($route['slots'] as $slot => $type)
 						$parameters[$slot] = call_user_func($this->type_patterns[$type]['parse'], $match[$slot]);
+
+					foreach ($route['conditions'] as $condition)
+						$this->container->invoke($condition);
 
 					return $this->container->invoke($route['callback'], $parameters);
 				}

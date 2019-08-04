@@ -36,6 +36,11 @@ class ORM
 		return new Query($this->db, $this->model, $this->schema, null, null);
 	}
 
+	public function save($object)
+	{
+		return $object->id ? $this->update($object) : $this->insert($object);
+	}
+
 	public function insert($object)
 	{
 		if (!($object instanceof $this->model))
@@ -61,6 +66,28 @@ class ORM
 		return $this->db->prepare($sql)->execute($bindings);
 	}
 
+	public function update($object)
+	{
+		if (!($object instanceof $this->model))
+			throw new InvalidArgumentException("Can only insert instances of {$this->model}");
+
+		$sql_columns = [];
+		$bindings = [];
+
+		foreach ($this->schema->columns() as $property => $column)
+		{
+			$placeholder = ":{$column->name}";
+			$sql_columns[] = sprintf('"%s" = %s', $column->name, $placeholder);
+			$bindings[$placeholder] = $object->$property;
+		}
+
+		$sql = sprintf('UPDATE "%s" SET %s',
+			$this->schema->tableName(),
+			implode(', ', $sql_columns));
+
+		return $this->db->prepare($sql)->execute($bindings);
+	}
+
 	public function createTable()
 	{
 		$sql_columns = [];
@@ -72,7 +99,12 @@ class ORM
 			$this->schema->tableName(),
 			implode(', ', $sql_columns));
 
-		return $this->db->exec($sql);
+		$this->db->exec($sql);
+
+		foreach ($this->schema->annotations('sql_pragma') as $pragma) {
+			echo $pragma;
+			$this->db->exec($pragma);
+		}
 	}
 }
 

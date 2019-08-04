@@ -46,3 +46,64 @@ body {
 	padding: 1em 1em;
 	margin: 0 auto;
 }
+
+pre {
+	background: #eee;
+	padding: 1em;
+	white-space: pre-wrap;
+}
+
+input {
+	font: inherit;
+}
+
+button {
+	font: inherit;
+	border: 2px solid transparent;
+	padding: 0.2em 0.8em;
+}
+
+button:hover {
+	border-color:rgba(0, 0, 0, 0.4);
+}
+
+.vertical-form label {
+	display: block;
+}
+
+.vertical-form input[type=text],
+.vertical-form trix-editor {
+	box-sizing: border-box;
+	border-radius: 0;
+	margin: 0.4em 0;
+	padding: 0.4em .6em;
+	width: 100%;
+	border: 2px solid rgba(0, 0, 0, 0.4);
+}
+
+.vertical-form .error input[type=text] {
+	border-color: #f33;
+}
+
+.vertical-form input[type=text]:focus {
+	border-color: #333;
+}
+
+.vertical-form fieldset {
+	border: none;
+	margin: 0 0 0.8em 0;
+	padding: 0;
+}
+
+.vertical-form p {
+	font-size: 0.7em;
+	margin: 0 0 0.4em 0;
+}
+
+.vertical-form .hint {
+	color: #666;
+}
+
+.vertical-form p.error {
+	color: #f33;
+}

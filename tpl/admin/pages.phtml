@@ -1,0 +1,9 @@
+<?php $this->extends('layout.phtml', ['title' => 'Manage pages']) ?>
+
+<h1>Pages</h1>
+<ol>
+	<?php foreach ($pages as $page): ?>
+	<li><a href="/admin/pages/<?=$page->id?>/"><?=$this->html($page->title)?></a>
+	<?php endforeach ?>
+</ol>
+<a href="/admin/pages/new">New page…</a>
