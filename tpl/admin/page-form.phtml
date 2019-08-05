@@ -1,0 +1,45 @@
+<?php $this->extends('layout.phtml', ['title' => $page->id ? "Edit {$page->title}" : "New page"]) ?>
+
+<?php $this->begin('head') ?>
+<link rel="stylesheet" type="text/css" href="/static/trix.css">
+<script type="text/javascript" src="/static/trix.js"></script>
+<script type="text/javascript" src="/static/trix-upload.js"></script>
+<?php $this->end() ?>
+
+<?php $this->define('fieldset', function($content, $name) use ($errors) { ?>
+	<?php $is_error = isset($errors[$name]); ?>
+	<fieldset class="<?=$is_error ? 'error' : ''?>">
+		<?= $content ?>
+		<?php if ($is_error): ?>
+			<p class="error"><?=$this->html($errors[$name])?></p>
+		<?php endif ?>
+	</fieldset>
+<?php }); ?>
+
+<form method="POST" action="" class="vertical-form">
+	<input type="hidden" name="_nonce" value="<?=\form\generate_nonce('page')?>">
+	<?php $this->macro('fieldset', 'title') ?>
+		<label for="page-title">Title</label>
+		<input type="text" name="title" id="page-title" value="<?=$this->attr($page->title)?>" placeholder="E.g. About Us">
+		<p class="hint">The title is shown in the title bar of the browser and often the search results of search engines.</p>
+	<?php $this->end() ?>
+
+	<?php $this->macro('fieldset', 'uri') ?>
+		<label for="page-uri">URI</label>
+		<input type="text" name="uri" id="page-uri" value="<?=$this->attr($page->uri)?>" placeholder="E.g. about-us">
+		<p class="hint">The URI is the name of the page in the address bar. If you change it later, all links pointing the old URI no longer work.</p>
+	<?php $this->end() ?>
+
+	<?php $this->macro('fieldset', 'body') ?>
+		<label for="page-body">Content</label>
+		<input type="hidden" id="page-body" name="body" value="<?=$this->attr($page->body)?>">
+		<trix-editor input="page-body"></trix-editor>
+	<?php $this->end() ?>
+
+	<div>
+		<button type="submit">Save</button>
+		<?php if ($page->id): ?>
+			<a href="/admin/pages/<?=$page->id?>/delete">Delete…</a>
+		<?php endif ?>
+	</div>
+</form>

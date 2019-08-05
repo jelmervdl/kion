@@ -3,6 +3,7 @@
 	<head>
 		<title><?= static::html(trim($title)) ?> &mdash; KION</title>
 		<link rel="stylesheet" href="/static/kion.css">
+		<?= isset($head) ? $head : '' ?>
 	</head>
 	<body>
 		<header class="navbar">

@@ -1,0 +1,9 @@
+<?php $this->extends('layout.phtml'); ?>
+
+<?php $this->begin('title') ?>
+	Error
+<?php $this->end() ?>
+
+<h1>An error occurred</h1>
+<p>The page could not be loaded due to the following error:</p>
+<pre><?= $this->html($exception) ?></pre>

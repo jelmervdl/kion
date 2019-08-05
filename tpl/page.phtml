@@ -1,7 +1,7 @@
 <?php $this->extends('layout.phtml') ?>
 
 <?php $this->begin('title') ?>
-	<?= static::html($page->title) ?>
+	<?= $this->html($page->title) ?>
 <?php $this->end() ?>
 
 <?=$page->body?>

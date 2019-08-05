@@ -16,7 +16,7 @@ class Container
 
 	private $build_stack = [];
 
-	public function register($service, Callable $factory)
+	public function register($service, callable $factory)
 	{
 		$this->registery[$service] = $factory;
 	}
@@ -54,7 +54,7 @@ class Container
 		return $item;
 	}
 
-	public function invoke(Callable $closure, $parameters = array())
+	public function invoke(callable $closure, $parameters = array())
 	{
 		$closure_info = new ReflectionFunction($closure);
 

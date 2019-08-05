@@ -4,6 +4,7 @@ namespace kion\models;
 
 /**
  * @sql_table pages
+ * @sql_pragma CREATE UNIQUE INDEX "uniq_uri" ON "pages" ("uri")
  */
 class Page extends \orm\schema\Model
 {
