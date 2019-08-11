@@ -14,14 +14,15 @@ require_once 'kion/models/page.php';
 require_once 'kion/models/user.php';
 
 use orm\dsl as q;
+use orm\NotFoundException;
 use orm\schema\LoadException;
 use kion\models\{Page, User, Role};
 use function tpl\render_template;
 
 function assert_admin($current_user)
 {
-	// if ($current_user->role !== kion\models\Role::ADMINISTRATOR)
-	// 	throw new \auth\UnauthorizedException();
+	if ($current_user->role != Role::ADMINISTRATOR)
+		throw new \auth\UnauthorizedException('This page required the role of administrator, your account has the role of ' . get_enum(Role::class, $current_user->role));
 }
 
 function redirect($destination)
@@ -57,11 +58,14 @@ $app->container->register('current_user', function() {
 
 /* Exception handlers */
 
-$app->exceptionHandler(auth\UnauthorizedException::class, function($exception) {
-	return redirect(edit_url('/admin/login', ['next' => $_SERVER['REQUEST_URI'], 'message' => $exception->getMessage()]));
+$app->exceptionHandler(auth\UnauthorizedException::class, function($exception, $current_user) {
+		if ($current_user->role === Role::GUEST)
+		return redirect(edit_url('/admin/login', ['next' => $_SERVER['REQUEST_URI'], 'message' => $exception->getMessage()]));
+	else
+		return [render_template('tpl/401-unauthorized.phtml', compact('exception')), 401];
 });
 
-$app->exceptionHandler(orm\NotFoundException::class, function($exception) {
+$app->exceptionHandler(NotFoundException::class, function($exception) {
 	return [render_template('tpl/404-not-found.phtml', ['exception' => $exception]), 404];
 });
 

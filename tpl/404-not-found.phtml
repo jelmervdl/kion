@@ -7,7 +7,7 @@
 <h1>Page not found</h1>
 <p>The page could not be found.</p>
 
-<!--
-	Exception:
-	<?= $exception ?>
--->
+<details>
+	<summary><?=$this->html($exception->getMessage())?></summary>
+	<pre><?= $this->html($exception) ?></pre>
+</details>
