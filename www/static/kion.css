@@ -72,6 +72,7 @@ button:hover {
 }
 
 .vertical-form input[type=text],
+.vertical-form input[type=password],
 .vertical-form trix-editor {
 	box-sizing: border-box;
 	border-radius: 0;
@@ -81,11 +82,13 @@ button:hover {
 	border: 2px solid rgba(0, 0, 0, 0.4);
 }
 
-.vertical-form .error input[type=text] {
+.vertical-form .error input[type=text],
+.vertical-form .error input[type=password] {
 	border-color: #f33;
 }
 
-.vertical-form input[type=text]:focus {
+.vertical-form input[type=text]:focus,
+.vertical-form input[type=password]:focus {
 	border-color: #333;
 }
 
@@ -106,4 +109,21 @@ button:hover {
 
 .vertical-form p.error {
 	color: #f33;
+}
+
+.full-width {
+	width: 100%;
+}
+
+table {
+	font-size: inherit;
+	line-height: inherit;
+}
+
+thead {
+	background: #ccc;
+}
+
+th, td {
+	padding: 0 0.2em;
 }

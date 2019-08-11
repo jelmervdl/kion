@@ -1,0 +1,29 @@
+<?php $this->extends('layout.phtml', ['title' => 'Manage users']) ?>
+
+<h1>Users</h1>
+<table class="full-width">
+	<col width="40%">
+	<col width="40%">
+	<col width="20%">
+	<thead>
+		<tr>
+			<th>Name</th>
+			<th>Email</th>
+			<th>Role</th>
+		</tr>
+	</thead>
+	<tbody>
+	<?php foreach ($users as $user): ?>
+		<tr>
+			<td><a href="/admin/users/<?=$user->id?>/"><?=$this->html($user->name)?></a></td>
+			<td><?=$this->html($user->email)?></td>
+			<td><?=[
+					\kion\models\Role::ADMINISTRATOR => 'Admin',
+					\kion\models\Role::USER => 'User',
+					\kion\models\Role::GUEST => 'Guest'
+				][$user->role] ?></td>
+		</tr>
+	<?php endforeach ?>
+	</tbody>
+</table>
+<a href="/admin/users/new">New user…</a>

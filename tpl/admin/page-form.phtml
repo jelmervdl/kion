@@ -1,20 +1,12 @@
 <?php $this->extends('layout.phtml', ['title' => $page->id ? "Edit {$page->title}" : "New page"]) ?>
 
+<?php include dirname(__FILE__) . '/_form.phtml' ?>
+
 <?php $this->begin('head') ?>
 <link rel="stylesheet" type="text/css" href="/static/trix.css">
 <script type="text/javascript" src="/static/trix.js"></script>
 <script type="text/javascript" src="/static/trix-upload.js"></script>
 <?php $this->end() ?>
-
-<?php $this->define('fieldset', function($content, $name) use ($errors) { ?>
-	<?php $is_error = isset($errors[$name]); ?>
-	<fieldset class="<?=$is_error ? 'error' : ''?>">
-		<?= $content ?>
-		<?php if ($is_error): ?>
-			<p class="error"><?=$this->html($errors[$name])?></p>
-		<?php endif ?>
-	</fieldset>
-<?php }); ?>
 
 <form method="POST" action="" class="vertical-form">
 	<input type="hidden" name="_nonce" value="<?=\form\generate_nonce('page')?>">

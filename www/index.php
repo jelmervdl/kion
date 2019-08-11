@@ -52,8 +52,15 @@ $app->container->register('pages', function($db) {
 	return new orm\ORM($db, Page::class);
 });
 
-$app->container->register('current_user', function() {
-	return new User(['role' => Role::GUEST]);
+$app->container->register('users', function($db) {
+	return new orm\ORM($db, User::class);
+});
+
+$app->container->register('current_user', function($users) {
+	if (!empty($_SESSION['user_id']))
+		return $users->query()->filter(q\eq($users->schema->id, $_SESSION['user_id']))->one();
+	else
+		return new User(['role' => Role::GUEST]);
 });
 
 /* Exception handlers */
@@ -110,6 +117,61 @@ $app->route('/admin/pages/new', ['assert_admin'], function($pages, $page_id = nu
 	return render_template('tpl/admin/page-form.phtml', compact('page', 'errors'));
 }));
 
+$app->route('/admin/users/', ['assert_admin'], function($users) {
+	return render_template('tpl/admin/users.phtml', ['users' => $users->query()->all()]);
+});
+
+$app->route('/admin/users/<int:user_id>/', ['assert_admin'],
+$app->route('/admin/users/new', ['assert_admin'], function($users, $user_id = null) {
+	$user = $user_id === null
+		? new User()
+		: $users->query()->filter(q\eq($users->schema->id, $user_id))->one();
+
+	$errors = [];
+
+	try {
+		if (form\is_submitted('user')) {
+			$user->load($_POST);
+			$users->save($user);
+			return redirect('/admin/users/');
+		}
+	} catch (PDOException $e) {
+		$errors = ['email' => $e->getMessage()];
+	} catch (LoadException $e) {
+		$errors = $e->errors;
+	}
+
+	return render_template('tpl/admin/user-form.phtml', compact('user', 'errors'));
+}));
+
+$app->route('/admin/login', function($users) {
+	$errors = [];
+
+	if (form\is_submitted('login')) {
+		try {
+			$user = $users->query()->filter(q\eq(q\func::lower($users->schema->email), q\func::lower($_POST['email'])))->one();
+			
+			if (!password_verify($_POST['password'], $user->password_hash))
+				throw new InvalidPasswordException();
+
+			if (password_needs_rehash($user->password_hash, PASSWORD_DEFAULT)) {
+				$user->password_hash = password_hash($_POST['password'], PASSWORD_DEFAULT);
+				$users->save($user);
+			}
+
+			$_SESSION['user_id'] = $user->id;
+
+			return redirect($_GET['next'] ?? '/admin/');
+		} catch (NotFoundException $e) {
+			$errors = ['email' => 'Email address not known'];
+		} catch (InvalidPasswordException $e) {
+			$errors = ['password', 'Invalid password'];
+		}
+	}
+
+	return render_template('tpl/admin/login-form.phtml', compact('errors'));
+});
+
 $app->route('/<path:page_uri>', function($page_uri, $pages) {
 	$page = $pages->query()->filter(q\eq($pages->schema->uri, $page_uri))->one();
 	return render_template('tpl/page.phtml', ['page' => $page]);
@@ -120,5 +182,7 @@ $app->route('/', function($router) {
 });
 
 /* Go! */
+
+session_start();
 
 $app->execute();

@@ -45,3 +45,9 @@ function edit_url($url, array $add = [], array $remove = [])
 
 	return $out;
 }
+
+function get_enum($class_name, $value)
+{
+	$refl = new ReflectionClass($class_name);
+	return array_search($value, $refl->getConstants());
+}

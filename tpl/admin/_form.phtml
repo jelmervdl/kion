@@ -1,0 +1,9 @@
+<?php $this->define('fieldset', function($content, $name) use ($errors) { ?>
+	<?php $is_error = isset($errors[$name]); ?>
+	<fieldset class="<?=$is_error ? 'error' : ''?>">
+		<?= $content ?>
+		<?php if ($is_error): ?>
+			<p class="error"><?=$this->html($errors[$name])?></p>
+		<?php endif ?>
+	</fieldset>
+<?php }); ?>
