@@ -38,7 +38,7 @@ class User extends \orm\schema\Model
 	public $password_hash;
 
 	/**
-	 * @sql_type INTEGER
+	 * @sql_type INTEGER DEFAULT 1
 	 */
 	public $role;
 }
