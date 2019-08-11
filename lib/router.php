@@ -52,6 +52,10 @@ class Router
 		if (!is_array($conditions))
 			throw new \InvalidArgumentException('Route conditions must be an array');
 
+		foreach ($conditions as $n => $condition)
+			if (!is_callable($condition))
+				throw new \InvalidArgumentException("Route condition #{$n} '$condition' is not callable");
+
 		if (!is_callable($callback))
 			throw new \InvalidArgumentException('Route callback must be callable');
 
@@ -69,7 +73,7 @@ class Router
 
 	public function execute()
 	{
-		$response = $this->dispatch($_SERVER['REQUEST_URI']);
+		$response = $this->dispatch(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 
 		if (!is_array($response))
 			$response = [$response];
