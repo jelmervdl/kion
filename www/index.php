@@ -91,7 +91,7 @@ $app->route('/admin/pages/<int:page_id>/', ['assert_admin'],
 $app->route('/admin/pages/new', ['assert_admin'], function($pages, $page_id = null) {
 	$page = $page_id === null
 		? new Page()
-		: $pages->query()->filter(q\eq('id', $page_id))->one();
+		: $pages->query()->filter(q\eq($pages->schema->id, $page_id))->one();
 
 	$errors = [];
 
@@ -111,7 +111,7 @@ $app->route('/admin/pages/new', ['assert_admin'], function($pages, $page_id = nu
 }));
 
 $app->route('/<path:page_uri>', function($page_uri, $pages) {
-	$page = $pages->query()->filter(q\eq('uri', $page_uri))->one();
+	$page = $pages->query()->filter(q\eq($pages->schema->uri, $page_uri))->one();
 	return render_template('tpl/page.phtml', ['page' => $page]);
 });
 

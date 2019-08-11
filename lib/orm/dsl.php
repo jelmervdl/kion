@@ -54,6 +54,8 @@ function compare($operator, $name, $value)
 			$sql_name = $name_node->sql;
 			$placeholder = uniqid(':p');
 		} else {
+			throw new \LogicException('Dont do this');
+
 			$sql_name = $name;
 			$placeholder = uniqid(':' . $name);
 		}
@@ -91,9 +93,15 @@ class func
 			$sql_args = [];
 
 			foreach ($arguments as $argument) {
-				$fragment = $argument->compile($schema, $db);
-				$bindings = array_merge($bindings, $fragment->bindings);
-				$sql_args[] = $fragment->sql;
+				if ($argument instanceof Node) {
+					$fragment = $argument->compile($schema, $db);
+					$bindings = array_merge($bindings, $fragment->bindings);
+					$sql_args[] = $fragment->sql;
+				} else {
+					$placeholder = uniqid(':' . $name);
+					$bindings[$placeholder] = $argument;
+					$sql_args[] = $placeholder;
+				}
 			}
 
 			$sql_args_expr = implode(', ', $sql_args);

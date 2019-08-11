@@ -48,6 +48,11 @@ class Schema
 			$this->columns[$property->getName()] = $this->deriveColumn($property);
 	}
 
+	public function __get($column)
+	{
+		return $this->column($column);
+	}
+
 	public function annotations($keyword)
 	{
 		$refl = new \ReflectionClass($this->model);

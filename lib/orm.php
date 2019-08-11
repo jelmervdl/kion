@@ -22,6 +22,10 @@ class MultipleMatchesException extends Exception
 
 class ORM
 {
+	public $model;
+	
+	public $schema;
+
 	public function __construct(\PDO $db, $model, $schema = null)
 	{
 		$this->db = $db;
