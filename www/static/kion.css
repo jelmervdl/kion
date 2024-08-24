@@ -63,8 +63,13 @@ button {
 	padding: 0.2em 0.8em;
 }
 
-button:hover {
+button:not([disabled]):hover,
+button:not([disabled]):focus {
 	border-color:rgba(0, 0, 0, 0.4);
+}
+
+form {
+	display: contents;
 }
 
 .vertical-form label {
@@ -88,8 +93,14 @@ button:hover {
 }
 
 .vertical-form input[type=text]:focus,
-.vertical-form input[type=password]:focus {
+.vertical-form input[type=password]:focus,
+trix-editor:focus {
 	border-color: #333;
+	outline: 5px auto rgb(0, 103, 244);
+}
+
+trix-editor:focus {
+	outline-offset: -2px;
 }
 
 .vertical-form fieldset {
@@ -111,6 +122,30 @@ button:hover {
 	color: #f33;
 }
 
+.vertical-form .controls > * {
+	margin-right: 0.8em;
+}
+
+.admin-nav {
+	display: block;
+	border-bottom: 1px solid #ccc;
+	margin-bottom: 0.8em;
+}
+
+.admin-nav a {
+	display: inline-block;
+	text-decoration: none;
+	background: #eee;
+	padding: 0.2em 0.8em;
+	color: black;
+	border: 1px solid #ccc;
+}
+
+.admin-nav a.active {
+	background: #fff;
+	border-bottom-color: #fff;
+}
+
 .full-width {
 	width: 100%;
 }
@@ -126,4 +161,39 @@ thead {
 
 th, td {
 	padding: 0 0.2em;
+}
+
+pre var {
+	color: #c00;
+}
+
+.warning {
+	display: block;
+	padding: 0.2 1rem;
+	margin-bottom: 1rem;
+	background: #fc0;
+}
+
+.warning button[type=submit] {
+	float: right;
+	margin-top: 1rem;
+	margin-right: 0rem;
+}
+
+.page-history {
+	float: right;
+	display: block;
+	background: #eee;
+	padding: 0 1rem;
+	font-size: 1rem;
+	margin-bottom: 1em;
+}
+
+.page-history ol {
+	list-style: none;
+	padding: 0;
+}
+
+.page-history .selected {
+	font-weight: bold;
 }

@@ -2,9 +2,15 @@
 
 namespace form;
 
-function is_submitted($form_name)
+function is_submitted($form_name_format, ...$args)
 {
-	return $_SERVER['REQUEST_METHOD'] == 'POST' && is_valid_nonce($form_name, $_POST['_nonce']);
+	return $_SERVER['REQUEST_METHOD'] == 'POST' && is_valid_nonce(vsprintf($form_name_format, $args), $_POST['_nonce']);
+}
+
+
+function form_nonce($form_name_format, ...$args)
+{
+	return generate_nonce(vsprintf($form_name_format, $args));
 }
 
 function is_valid_nonce($action, $nonce)

@@ -36,8 +36,14 @@ class Template
 	public function render()
 	{
 		ob_start();
-		extract($this->__DATA__);
-		include $this->__TEMPLATE__;
+
+		try {
+			extract($this->__DATA__);
+			include $this->__TEMPLATE__;
+		} catch (\Exception $e) {
+			ob_end_clean();
+			throw $e;
+		}
 
 		if ($this->__PARENT__) {
 			$this->__PARENT__->set('default', ob_get_clean());
@@ -90,23 +96,32 @@ class Template
 		array_pop($this->__STACK__)(ob_get_clean());
 	}
 
-	protected function define($name, callable $macro)
+	public function define($name, callable $macro)
 	{
 		$this->__MACROS__[$name] = $macro;
 	}
 
-	protected function html($data)
+	public function __call(string $name, array $arguments)
 	{
-		return htmlspecialchars($data, ENT_COMPAT, 'utf-8');
-	}
-
-	protected function attr($data)
-	{
-		return htmlspecialchars($data, ENT_QUOTES, 'utf-8');
+		return call_user_func_array($this->__MACROS__[$name], $arguments);
 	}
 }
 
-function render_template($path, array $data = [])
+function render_template(string $path, array $data = [])
 {
-	return (new Template($path, $data))->render();
+	$tpl = new Template($path, $data);
+
+	$tpl->define('html', function($data) {
+		return \htmlspecialchars($data, ENT_COMPAT, 'utf-8');
+	});
+
+	$tpl->define('attr', function($data) {
+		return \htmlspecialchars($data, ENT_QUOTES, 'utf-8');
+	});
+
+	$tpl->define('datetime', function($data, $format='Y-m-d H:i:s') {
+		return (new \DateTime("@{$data}"))->format($format);
+	});
+
+	return $tpl->render();
 }

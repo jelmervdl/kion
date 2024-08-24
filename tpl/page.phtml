@@ -4,4 +4,20 @@
 	<?= $this->html($page->title) ?>
 <?php $this->end() ?>
 
+<?php if ($page->replaced_by): ?>
+	<div class="warning">
+		<p>You're looking at an out-of-date version of this page.</p>
+	</div>
+<?php endif ?>
+
+<?php if ($page->deleted_on): ?>
+	<div class="warning">
+		<form method="post" action="/admin/pages/<?=$page->id?>/">
+			<input type="hidden" name="_nonce" value="<?=\form\form_nonce('restore-page-%d', $page->id)?>">
+			<button type="submit">Restore page</button>
+		</form>
+		<p>This page has been binned since <?=(new DateTime("@{$page->deleted_on}"))->format('Y-m-d H:i:s')?>.</p>
+	</div>
+<?php endif ?>
+
 <?=$page->body?>

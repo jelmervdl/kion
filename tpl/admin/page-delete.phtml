@@ -1,0 +1,14 @@
+<?php $this->extends('layout.phtml', ['title' => "Delete {$page->title}", 'section' => 'pages']) ?>
+
+<form method="POST" action="" class="vertical-form">
+	<input type="hidden" name="_nonce" value="<?=\form\form_nonce('delete-page-%d', $page->id)?>">
+	<fieldset>
+		<h2>Are you sure you want to delete <?=$this->html($page->title)?>?</h2>
+		<p>The page will be moved to the bin, and it won't be accessible. From there you can either restore the page, or empty the bin and permanently delete it and all its history.</p>
+	</fieldset>
+
+	<div>
+		<button type="submit">Delete page</button>
+		<a href="/admin/pages/<?=$page->id?>/">Go back</a>
+	</div>
+</form>

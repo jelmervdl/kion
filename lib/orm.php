@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace orm;
 
 require_once 'orm/dsl.php';
@@ -20,35 +22,45 @@ class MultipleMatchesException extends Exception
 	//
 }
 
+class BadQueryException extends Exception
+{
+	//
+}
+
 class ORM
 {
-	public $model;
+	public $db;
+
+	public $data_class;
 	
 	public $schema;
 
-	public function __construct(\PDO $db, $model, $schema = null)
+	public function __construct(\PDO $db, string $data_class, schema\Schema $schema = null)
 	{
 		$this->db = $db;
 
-		$this->model = $model;
+		$this->data_class = $data_class;
 
-		$this->schema = $schema ? $schema : new schema\Schema($model);
+		$this->schema = $schema ?? new schema\Schema($data_class);
 	}
 
 	public function query()
 	{
-		return new Query($this->db, $this->model, $this->schema, null, null);
+		return new Query($this, null, null);
 	}
 
-	public function save($object)
+	public function save(object $object)
 	{
-		return $object->id ? $this->update($object) : $this->insert($object);
+		if ($object->id)
+			$this->update($object);
+		else
+			$this->insert($object);
 	}
 
-	public function insert($object)
+	public function insert(object $object)
 	{
-		if (!($object instanceof $this->model))
-			throw new InvalidArgumentException("Can only insert instances of {$this->model}");
+		if (!($object instanceof $this->data_class))
+			throw new \InvalidArgumentException("Can only insert instances of {$this->data_class}");
 
 		$sql_columns = [];
 		$sql_values = [];
@@ -67,13 +79,15 @@ class ORM
 			implode(', ', $sql_columns),
 			implode(', ', $sql_values));
 
-		return $this->db->prepare($sql)->execute($bindings);
+		$this->db->prepare($sql)->execute($bindings);
+
+		$object->id = $this->db->lastInsertId();
 	}
 
-	public function update($object)
+	public function update(object $object)
 	{
-		if (!($object instanceof $this->model))
-			throw new InvalidArgumentException("Can only insert instances of {$this->model}");
+		if (!($object instanceof $this->data_class))
+			throw new \InvalidArgumentException("Can only insert instances of {$this->data_class}");
 
 		$sql_columns = [];
 		$bindings = [':id' => $object->id];
@@ -92,7 +106,18 @@ class ORM
 			$this->schema->tableName(),
 			implode(', ', $sql_columns));
 
-		return $this->db->prepare($sql)->execute($bindings);
+		$this->db->prepare($sql)->execute($bindings);
+	}
+
+	public function delete(object $object)
+	{
+		if (!($object instanceof $this->data_class))
+			throw new \InvalidArgumentException("Can only insert instances of {$this->data_class}");
+
+		$sql = sprintf('DELETE FROM "%s" WHERE id = :id',
+			$this->schema->tableName());
+
+		$this->db->prepare($sql)->execute([':id' => $object->id]);
 	}
 
 	public function createTable()
@@ -117,20 +142,18 @@ class ORM
 
 class Query implements dsl\Node
 {
-	public function __construct(\PDO $db, $model, $schema, array $columns = null, dsl\Node $filter = null)
+	public function __construct(ORM $model, array $columns = null, dsl\Node $filter = null, array $joins = [])
 	{
-		$this->db = $db;
-
 		$this->model = $model;
 
-		$this->schema = $schema;
-
-		$this->columns = $columns;
+		$this->columns = $columns ?? $this->model->schema->columns();
 
 		$this->filter = $filter;
+
+		$this->joins = $joins;
 	}
 
-	public function select(array $column_names)
+	public function select(array $column_names): Query
 	{
 		$columns = [];
 
@@ -139,7 +162,7 @@ class Query implements dsl\Node
 				$property = $column;
 
 			if (is_string($column))
-				$column = $this->schema->column($column);
+				$column = $this->model->schema->column($column);
 
 			if (!($column instanceof dsl\Node))
 				throw new \InvalidArgumentException("Column for $property is not a column name or of type " . dsl\Node::class);
@@ -147,18 +170,39 @@ class Query implements dsl\Node
 			$columns[$property] = $column;
 		}
 
-		return new Query($this->db, $this->model, $this->schema, $columns, $this->filter);
+		return new Query($this->model, $columns, $this->filter, $this->joins);
 	}
 
-	public function filter($filter)
+	public function join(string $data_class, string $alias, callable $filter)
 	{
-		return new Query($this->db, $this->model, $this->schema, $this->columns,
-			$this->filter !== null ? dsl\and_($this->filter, $filter) : $filter);
+		$table_alias = uniqid($alias);
+
+		$join = new ORM($this->model->db, $data_class, new schema\Schema($data_class, $table_alias));
+
+		$query = new Query($join);
+
+		$join_condition = $filter($query, $join->schema);
+		
+		return new Query($this->model,
+			array_merge($this->columns, $join->schema->columns()),
+			$this->filter,
+			array_merge($this->joins, [$alias => $join]));
 	}
 
-	public function all()
+	public function filter(dsl\Node $filter): Query
+	{
+		return new Query($this->model, $this->columns,
+			$this->filter !== null ? dsl\and_($this->filter, $filter) : $filter, $this->joins);
+	}
+
+	public function all(): array
 	{
 		return $this->execute()->fetchAll();
+	}
+
+	public function first()
+	{
+		return $this->execute()->fetch();
 	}
 
 	public function one()
@@ -187,44 +231,62 @@ class Query implements dsl\Node
 		return $this->execute()->fetchColumn(0);
 	}
 
-	public function execute(array $bindings = [])
+	public function count()
 	{
-		$query = $this->compile($this->schema, $this->db);
-		$stmt = $this->db->prepare($query->sql);
+		return (int) $this->select([dsl\sql('COUNT(*)')])->scalar();
+	}
+
+	public function execute(array $bindings = []): \PDOStatement
+	{
+		$query = $this->compile($this->model->db);
+
+		$sql = substr($query->sql, 1, -1); // strip the ( and ).
 		
-		if ($this->columns)
+		try {
+			$stmt = $this->model->db->prepare($sql);
+		} catch (\PDOException $e) {
+			throw new BadQueryException("Error in query: $sql", 0, $e);
+		}
+
+		if ($this->columns && false)
 			$stmt->setFetchMode(\PDO::FETCH_ASSOC);
 		else
-			$stmt->setFetchMode(\PDO::FETCH_CLASS, $this->model, []);
+			$stmt->setFetchMode(\PDO::FETCH_CLASS, $this->model->data_class, []);
 
 		$stmt->execute($query->bindings);
 		
 		return $stmt;
 	}
 
-	public function compile(schema\Schema $schema, \PDO $db)
+	public function delete()
+	{
+		foreach ($this->select($this->model->schema->columns())->all() as $obj)
+			$this->model->delete($obj);
+	}
+
+	public function compile(\PDO $db): dsl\Fragment
 	{
 		$sql_select = [];
 
 		$bindings = [];
 
-		$columns = $this->columns ? $this->columns : $this->schema->columns();
-
-		foreach ($columns as $label => $definition) {
-			$fragment = $definition->compile($this->schema, $db);
+		foreach ($this->columns as $label => $definition) {
+			$fragment = $definition->compile($db);
 			$sql_select[] = is_int($label)
 				? $fragment->sql
 				: sprintf('%s as %s', $fragment->sql, $label);
 			$bindings = array_merge($bindings, $fragment->bindings);
 		}
 
-		$sql = 'SELECT ' . implode(', ', $sql_select) . ' FROM ' . $this->schema->tableName();
+		$sql = 'SELECT ' . implode(', ', $sql_select) . ' FROM ' . $this->model->schema->tableName();
 
 		if ($this->filter !== null) {
-			$fragment = $this->filter->compile($this->schema, $db);
+			$fragment = $this->filter->compile($db);
 			$sql .= ' WHERE ' . $fragment->sql;
 			$bindings = array_merge($bindings, $fragment->bindings);
 		}
+
+		$sql = sprintf('(%s)', $sql);
 
 		return new dsl\Fragment($sql, $bindings);
 	}

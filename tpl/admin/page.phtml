@@ -1,0 +1,31 @@
+<?php $this->extends('layout.phtml', ['section' => 'pages']) ?>
+
+<?php $this->begin('title') ?>
+	<?= $this->html($page->title) ?>
+<?php $this->end() ?>
+
+<?php if ($current->deleted_on): ?>
+	<div class="warning">
+		<form method="post" action="/admin/pages/<?=$current->id?>/">
+			<input type="hidden" name="_nonce" value="<?=\form\form_nonce('restore-page-%d', $current->id)?>">
+			<button type="submit">Restore page</button>
+		</form>
+		<p>This page has been binned since <?=(new DateTime("@{$current->deleted_on}"))->format('Y-m-d H:i:s')?>.</p>
+	</div>
+<?php endif ?>
+
+<aside class="page-history">
+	<h2>History</h2>
+	<ol>
+		<?php foreach ($versions as $version): ?>
+		<li class="<?=$version->id == $page->id ? 'selected' : ''?>">
+			<a href="/admin/pages/<?=$version->id?>/">
+				<?=$this->datetime($version->created_on, 'Y-m-d H:i:s')?>
+			</a>
+			<span class="byline"> by <a href="/users/<?=$version->created_by?>/"><?=$this->html($version->created_by_user->name)?></a></span>
+		</li>
+		<?php endforeach ?>
+	</ol>
+</aside>
+
+<?=$page->body?>

@@ -1,4 +1,4 @@
-<?php $this->extends('layout.phtml', ['title' => $page->id ? "Edit {$page->title}" : "New page"]) ?>
+<?php $this->extends('layout.phtml', ['title' => $page->id ? "Edit {$page->title}" : "New page", 'section' => 'pages']) ?>
 
 <?php include dirname(__FILE__) . '/_form.phtml' ?>
 
@@ -9,7 +9,7 @@
 <?php $this->end() ?>
 
 <form method="POST" action="" class="vertical-form">
-	<input type="hidden" name="_nonce" value="<?=\form\generate_nonce('page')?>">
+	<input type="hidden" name="_nonce" value="<?=\form\form_nonce('page')?>">
 	<?php $this->macro('fieldset', 'title') ?>
 		<label for="page-title">Title</label>
 		<input type="text" name="title" id="page-title" value="<?=$this->attr($page->title)?>" placeholder="E.g. About Us">
@@ -28,9 +28,10 @@
 		<trix-editor input="page-body"></trix-editor>
 	<?php $this->end() ?>
 
-	<div>
+	<div class="controls">
 		<button type="submit">Save</button>
 		<?php if ($page->id): ?>
+			<a href="/admin/pages/<?=$page->id?>/">History</a>
 			<a href="/admin/pages/<?=$page->id?>/delete">Delete…</a>
 		<?php endif ?>
 	</div>

@@ -8,16 +8,19 @@ require_once 'lib/util.php';
 require_once 'lib/router.php';
 require_once 'lib/auth.php';
 require_once 'lib/orm.php';
+require_once 'lib/orm/traits.php';
 require_once 'lib/tpl.php';
 require_once 'lib/form.php';
 require_once 'kion/models/page.php';
 require_once 'kion/models/user.php';
+require_once 'kion/models/file.php';
 
 use orm\dsl as q;
 use orm\NotFoundException;
 use orm\schema\LoadException;
-use kion\models\{Page, User, Role};
+use kion\models\{Page, User, Role, File};
 use function tpl\render_template;
+
 
 function assert_admin($current_user)
 {
@@ -49,11 +52,58 @@ $app->container->register('db', function() {
 });
 
 $app->container->register('pages', function($db) {
-	return new orm\ORM($db, Page::class);
+	class ReplaceablePages extends orm\ORM {
+		use orm\traits\Replaceable;
+	}
+
+	class DeletablePages extends ReplaceablePages {
+		use orm\traits\Deletable;
+	}
+
+	return new class ($db, Page::class) extends DeletablePages {
+		public function all(): orm\Query {
+			return orm\ORM::query();
+		}
+
+		public function insert(object $object) {
+			if ($this->query()->filter(q\eq($this->schema->uri, $object->uri))->count() > 0)
+				throw new LoadException(['uri' => 'This URI is already used by another page']);
+
+			parent::insert($object);
+		}
+	};
 });
 
 $app->container->register('users', function($db) {
 	return new orm\ORM($db, User::class);
+});
+
+$app->container->register('files', function($db) {
+	class PruneFiles extends orm\ORM {
+		public function insert(object $object) {
+			if ($file->uploaded_file) {
+				$file->path = uniqid('file_') . pathinfo($file->name, PATHINFO_EXTENSION);
+				move_uploaded_file($file->uploaded_file, 'var/files/' . $file->path);
+			}
+
+			parent::insert($object);
+		}
+
+		public function delete(object $file) {
+			parent::delete($file);
+
+			if ($file->path && file_exists('var/files/' . $file->path))
+				unlink('var/files/' . $file->path);
+		}
+	}
+
+	class ReplaceableFiles extends PruneFiles {
+		use orm\traits\Replaceable;
+	}
+
+	return new class($db, File::class) extends ReplaceableFiles {
+		use orm\traits\Deletable;
+	};
 });
 
 $app->container->register('current_user', function($users) {
@@ -94,8 +144,30 @@ $app->route('/admin/pages/', ['assert_admin'], function($pages) {
 	return render_template('tpl/admin/pages.phtml', ['pages' => $pages->query()->all()]);
 });
 
-$app->route('/admin/pages/<int:page_id>/', ['assert_admin'], 
-$app->route('/admin/pages/new', ['assert_admin'], function($pages, $page_id = null) {
+$app->route('/admin/pages/<int:page_id>/', ['assert_admin'], function($pages, $page_id) {
+	$page = $pages->all()->filter(q\eq($pages->schema->id, $page_id))->one();
+
+	if (form\is_submitted('restore-page-%d', $page->id)) {
+		$pages->restore($page);
+		return redirect('/admin/pages/');
+	}
+
+	if (form\is_submitted('revert-page-%d', $page->id)) {
+		$pages->revert($page);
+		return redirect('admin/pages/');
+	}
+
+	// Get the page history, previous and future versions
+	$versions = $pages->versions($page);
+
+	// The latest version is in the current implementation always the current version
+	$current = end($versions);
+
+	return render_template('tpl/admin/page.phtml', compact('page', 'current', 'versions'));
+});
+
+$app->route('/admin/pages/<int:page_id>/edit', ['assert_admin'], 
+$app->route('/admin/pages/new', ['assert_admin'], function($pages, $current_user, $page_id = null) {
 	$page = $page_id === null
 		? new Page()
 		: $pages->query()->filter(q\eq($pages->schema->id, $page_id))->one();
@@ -105,17 +177,28 @@ $app->route('/admin/pages/new', ['assert_admin'], function($pages, $page_id = nu
 	try {
 		if (form\is_submitted('page')) {
 			$page->load($_POST);
+			$page->created_on = (new DateTime())->getTimestamp();
+			$page->created_by = $current_user->id;
 			$pages->save($page);
 			return redirect('/admin/pages/');
 		}
-	} catch (PDOException $e) {
-		$errors = ['uri' => $e->getMessage()];
 	} catch (LoadException $e) {
 		$errors = $e->errors;
 	}
 
 	return render_template('tpl/admin/page-form.phtml', compact('page', 'errors'));
 }));
+
+$app->route('/admin/pages/<int:page_id>/delete', ['assert_admin'], function($pages, $page_id) {
+	$page = $pages->query()->filter(q\eq($pages->schema->id, $page_id))->one();
+
+	if (form\is_submitted('delete-page-%d', $page->id)) {
+		$pages->delete($page);
+		return redirect('/admin/pages/');
+	}
+
+	return render_template('tpl/admin/page-delete.phtml', compact('page'));
+});
 
 $app->route('/admin/users/', ['assert_admin'], function($users) {
 	return render_template('tpl/admin/users.phtml', ['users' => $users->query()->all()]);
@@ -143,6 +226,17 @@ $app->route('/admin/users/new', ['assert_admin'], function($users, $user_id = nu
 
 	return render_template('tpl/admin/user-form.phtml', compact('user', 'errors'));
 }));
+
+$app->route('/admin/files/', ['assert_admin'], function($files) {
+	return render_template('tpl/admin/files.phtml', ['files' => $files->active()->all()]);
+});
+
+$app->route('/admin/bin/', ['assert_admin'], function($pages, $files) {
+	return render_template('tpl/admin/binned.phtml', [
+		'pages' => $pages->deleted()->all(),
+		'files' => $files->deleted()->all()
+	]);
+});
 
 $app->route('/admin/login', function($users) {
 	$errors = [];

@@ -1,7 +1,18 @@
+<?php
+
+$this->define('html', function($data) {
+	return htmlspecialchars($data, ENT_COMPAT, 'utf-8');
+});
+
+$this->define('attr', function($data) {
+	return htmlspecialchars($data, ENT_QUOTES, 'utf-8');
+});
+
+?>
 <DOCTYPE html>
 <html>
 	<head>
-		<title><?= static::html(trim($title)) ?> &mdash; KION</title>
+		<title><?= $this->html(trim($title)) ?> &mdash; KION</title>
 		<link rel="stylesheet" href="/static/kion.css">
 		<?= isset($head) ? $head : '' ?>
 	</head>

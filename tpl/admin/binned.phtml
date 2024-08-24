@@ -1,0 +1,30 @@
+<?php $this->extends('layout.phtml', ['title' => 'Binned items', 'section' => 'bin']) ?>
+
+<h1>Binned Pages</h1>
+<?php if ($pages): ?>
+	<ol>
+		<?php foreach ($pages as $page): ?>
+		<li><a href="/admin/pages/<?=$page->id?>/"><?=$this->html($page->title)?></a>
+		<?php endforeach ?>
+	</ol>
+<?php else: ?>
+	<p>There are no pages in the bin right now.</p>
+<?php endif ?>
+
+<h1>Binned files</h1>
+<?php if ($files): ?>
+	<ol>
+		<?php foreach ($files as $file): ?>
+		<li><a href="/admin/files/<?=$file->id?>/"><?=$this->html($file->name)?></a>
+		<?php endforeach ?>
+	</ol>
+<?php else: ?>
+	<p>There are no files in the bin right now.</p>
+<?php endif ?>
+
+<form action="" method="post" class="vertical-form">
+	<input type="hidden" name="_nonce" value="<?=\form\form_nonce('prune-bin')?>">
+	<div>
+		<button type="submit" <?php if (!$pages && !$files) echo 'disabled' ?>>Permanently delete binned items</button>
+	</div>
+</form>
